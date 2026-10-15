@@ -140,12 +140,12 @@
             }).slice(0, 8);
 
             if (correspondances.length === 0) {
-                resultatsEl.innerHTML = '<div style="padding:0.7rem; color:#7a6857; font-size:0.85rem;">Aucun client trouve.</div>';
+                resultatsEl.innerHTML = '<div style="padding:0.7rem; color:#8f7d6e; font-size:0.85rem;">Aucun client trouve.</div>';
             } else {
                 var html = '';
                 correspondances.forEach(function (c) {
                     html += '<div class="resultat-client" data-id="' + c.id + '" data-nom="' + esc(c.prenom + ' ' + c.nom) + '" style="padding:0.8rem 1rem; cursor:pointer; border-bottom:1px solid #f3f0ec;">' +
-                        esc(c.prenom + ' ' + c.nom) + ' <span style="color:#7a6857; font-size:0.8rem;">- ' + esc(c.telephone) + '</span></div>';
+                        esc(c.prenom + ' ' + c.nom) + ' <span style="color:#8f7d6e; font-size:0.8rem;">- ' + esc(c.telephone) + '</span></div>';
                 });
                 resultatsEl.innerHTML = html;
             }
