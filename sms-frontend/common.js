@@ -54,11 +54,7 @@ function injecterHeader(avecNav) {
     if (!headerEl) return;
 
     var logoHtml = '<a href="accueil.html" class="logo-zone">';
-    logoHtml += '<img src="logo.png" alt="SMS">';
-    logoHtml += '<div class="texte-entreprise">';
-    logoHtml += '<div class="nom-entreprise"><span class="mot-sms">SMS</span></div>';
-    logoHtml += '<div class="slogan-entreprise">Import · Export · Transit</div>';
-    logoHtml += '</div>';
+    logoHtml += '<img src="logo.png" alt="SMS - Import Export Transit">';
     logoHtml += '</a>';
 
     var actionsHtml = '<div class="header-actions">';

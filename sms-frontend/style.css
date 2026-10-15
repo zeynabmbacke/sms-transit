@@ -821,3 +821,104 @@ tr:last-child td { border-bottom: none; }
         flex-wrap: wrap;
     }
 }
+
+/* ==========================================================
+   THEME CLAIR SMS : fond blanc, titres et boutons bleus
+   (l'orange reste uniquement dans le logo)
+   ========================================================== */
+:root {
+    --fond: #ffffff;
+    --bordure: #dfe6f7;
+    --ombre: 0 2px 14px rgba(31, 63, 168, 0.10);
+}
+
+body {
+    background: #ffffff;
+    color: var(--texte);
+}
+
+#app-header {
+    background: #ffffff;
+    color: var(--bleu-fonce);
+    border-bottom: 2px solid var(--bleu-marine);
+    box-shadow: 0 2px 12px rgba(31, 63, 168, 0.10);
+}
+
+.logo-zone img {
+    height: 104px;
+    width: auto;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+}
+
+.nav-liens-header .lien-lateral { color: var(--bleu-marine); }
+.nav-liens-header .lien-lateral:hover { border-bottom-color: var(--bleu-marine); }
+.nav-liens-header .lien-lateral-actif { background: transparent; color: var(--bleu-fonce); }
+
+.utilisateur-connecte { color: var(--bleu-fonce); opacity: 1; font-weight: 600; }
+.header-actions button { background: var(--bleu-marine); color: #ffffff; }
+.header-actions button:hover { background: var(--bleu-fonce); }
+
+/* Titres de pages */
+.titre-page-transit { color: var(--bleu-marine) !important; }
+.sous-titre-page-transit { color: var(--texte-secondaire) !important; }
+.entete-client-etale { color: var(--bleu-marine); }
+.entete-client-etale h1 { color: var(--bleu-marine); }
+
+/* Cartes sur fond blanc : bordure fine */
+section, .carte, .carte-stat, .carte-champ {
+    background: #ffffff;
+    border: 1px solid var(--bordure);
+}
+.carte-stat.accent-orange { border-left-color: var(--bleu-fonce); }
+.carte-stat { border-left-width: 5px; }
+.carte-stat .valeur { color: var(--bleu-marine); }
+
+.coord-item { background: #f4f7fd; border: 1px solid var(--bordure); }
+.coord-item .label { color: var(--texte-secondaire); opacity: 1; }
+.coord-item .valeur { color: var(--bleu-marine); }
+.coord-item.accent-orange .valeur { color: var(--bleu-fonce); }
+
+.prix { color: var(--bleu-marine); }
+.btn-paiement { background: var(--bleu-marine); }
+.btn-paiement:hover { background: var(--bleu-fonce); }
+.bouton-retour-accueil { background: var(--bleu-marine); box-shadow: 0 6px 18px rgba(31, 63, 168, 0.30); }
+#toast { background: var(--bleu-marine); box-shadow: 0 8px 28px rgba(31, 63, 168, 0.35); }
+#toast.toast-erreur { background: #b23a3a; }
+.barre-recherche { border: 1px solid var(--bordure); background-color: #ffffff; }
+.bouton-secondaire { background: #ffffff; border: 1px solid var(--bordure); }
+
+/* Barre laterale de l'accueil */
+.barre-laterale { background: #f4f7fd; border-right: 1px solid var(--bordure); }
+.lien-lateral { color: var(--bleu-marine); }
+.lien-lateral:hover { background: #e6ecfb; border-left-color: var(--bleu-marine); }
+.lien-lateral-actif { background: #e6ecfb; border-left-color: var(--bleu-marine); color: var(--bleu-fonce); }
+.separateur-lateral { background: var(--bordure); }
+.contenu-accueil { background: #ffffff; }
+.hero-accueil { margin: 1rem; }
+@media (max-width: 900px) {
+    .lien-lateral:hover { background: #e6ecfb; }
+}
+
+/* Page de connexion : le logo complet, tel quel */
+.zone-logo-connexion {
+    background: #ffffff;
+    border-right: 1px solid var(--bordure);
+    padding: 2rem;
+}
+.zone-logo-connexion img {
+    width: 92% !important;
+    max-width: 640px !important;
+    height: auto !important;
+}
+.zone-formulaire-connexion { background: #f4f7fd; }
+.carte-connexion { border: 1px solid var(--bordure); }
+
+@media (max-width: 800px) {
+    .zone-logo-connexion { border-right: none; border-bottom: 1px solid var(--bordure); padding: 1rem; }
+    .zone-logo-connexion img { max-width: 360px !important; }
+}
+@media (max-width: 640px) {
+    .logo-zone img { height: 58px; padding: 0; }
+}
