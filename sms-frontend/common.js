@@ -1,4 +1,4 @@
-const API_URL = 'https://REMPLACER-PAR-URL-BACKEND-SMS.up.railway.app/api';
+const API_URL = 'https://sms-backend-production-9547.up.railway.app/api';
 
 function getToken() {
     return localStorage.getItem('sms_token');
