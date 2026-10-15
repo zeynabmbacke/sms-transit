@@ -934,3 +934,6 @@ body { background: #ffffff; color: var(--texte); }
 .zone-logo-connexion, .zone-formulaire-connexion { background: #ffffff; }
 .cadre-logo-connexion img { filter: none; }
 .carte-stat, .carte, .carte-connexion { box-shadow: 0 1px 8px rgba(20,36,94,0.10); }
+.logo-zone img { height: 120px; }
+@media (max-width: 900px) { .logo-zone img { height: 84px; } }
+@media (max-width: 640px) { .logo-zone img { height: 58px; } }
