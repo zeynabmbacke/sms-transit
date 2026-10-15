@@ -934,3 +934,24 @@ body { background: #ffffff; color: var(--texte); }
 .zone-logo-connexion, .zone-formulaire-connexion { background: #ffffff; }
 .cadre-logo-connexion img { filter: none; }
 .carte-stat, .carte, .carte-connexion { box-shadow: 0 1px 8px rgba(20,36,94,0.10); }
+
+/* ===== Fond sombre noir bleute ===== */
+body, .page-accueil-flex { background: linear-gradient(160deg, #06090f, #121a2e) fixed !important; color: #e9edf8; }
+#app-header { background: rgba(0,0,0,0.30) !important; border-bottom: 3px solid #f5a623 !important; box-shadow: none !important; }
+#app-header a, #app-header span, #app-header nav a { color: #e9edf8 !important; }
+.logo-zone img, .cadre-logo-connexion img { background: #ffffff; border-radius: 10px; padding: 6px 12px; box-sizing: content-box; }
+.logo-zone img { height: 62px; }
+.barre-laterale { background: rgba(0,0,0,0.25) !important; border-right: 1px solid #243050 !important; }
+.barre-laterale a { color: #e9edf8 !important; }
+.barre-laterale hr, .barre-laterale .separateur { border-color: #243050 !important; }
+.zone-logo-connexion { background: transparent !important; border-color: #243050 !important; }
+.zone-formulaire-connexion { background: transparent !important; }
+.titre-page-transit, h1 { color: #ffffff !important; }
+.sous-titre-page-transit { color: #aab4d0 !important; }
+section h2 { color: #14245e; }
+button, .header-actions button { background: #f5a623 !important; color: #14245e !important; }
+.bouton-retour-accueil { background: #f5a623 !important; color: #14245e !important; }
+td, tbody td { color: #14245e !important; }
+.layout-accueil, .contenu-accueil { background: transparent !important; }
+.carte-stat .label, .carte-stat .valeur { color: #14245e; }
+.carte-stat .label { color: #667085; }
