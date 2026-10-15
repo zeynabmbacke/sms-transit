@@ -1,0 +1,42 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Build / generated files
+dist/
+build/
+coverage/
+
+# Local database dumps (NE PAS committer de données réelles)
+*.sql
+!schema.sql
+*.sql.gz
+*.dump
+
+# Certificates / private keys
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Temporary files
+tmp/
+temp/

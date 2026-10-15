@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fiche client - SMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="app-header"></header>
+    <main>
+        <div class="entete-client-etale" id="entete-client">
+            <p style="color:white;">Chargement...</p>
+        </div>
+
+        <div class="barre-actions">
+            <a href="#" id="btn-modifier-client" class="bouton-secondaire">Modifier le client</a>
+        </div>
+
+        <section>
+            <h2>Historique des dossiers</h2>
+            <table>
+                <thead>
+                    <tr><th>Référence</th><th>Conteneur</th><th>Statut</th><th>Montant dû</th><th>Versé</th><th>Reste à payer</th><th>Facture</th></tr>
+                </thead>
+                <tbody id="historique-corps"></tbody>
+            </table>
+            <input type="file" id="input-facture" accept=".pdf,.jpg,.jpeg,.png" style="display:none;">
+        </section>
+
+        <div id="zone-retour"></div>
+    </main>
+
+    <div id="modal-retrait" class="modal cachee">
+        <div class="modal-contenu">
+            <h3>Retirer cette facture</h3>
+            <p style="color: var(--texte-secondaire); margin-bottom: 1rem;" id="texte-retrait"></p>
+            <div class="modal-actions">
+                <button id="non-retrait" style="background:#eef0f3;">NON</button>
+                <button id="oui-retrait" style="background:#b23a3a; color:white;">OUI</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="common.js"></script>
+    <script>
+        function esc(t) {
+            return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        executerSansBloquer(function () { protegerPage(); });
+        executerSansBloquer(function () { injecterHeader(true); });
+        executerSansBloquer(function () { injecterMenuLateral('menu-lateral'); });
+        executerSansBloquer(function () { injecterBoutonRetour('zone-retour'); });
+
+        var idClient = new URLSearchParams(window.location.search).get('id');
+        var idDossierCible = null;
+        var idFactureCible = null;
+
+        async function chargerFicheClient() {
+            if (!idClient) {
+                document.getElementById('entete-client').innerHTML = '<p style="color:white;">Aucun client sélectionné.</p>';
+                return;
+            }
+
+            document.getElementById('btn-modifier-client').href = 'modifier-client.html?id=' + idClient;
+
+            try {
+                var reponse = await appelApi('/clients/' + idClient);
+                if (!reponse.ok) throw new Error('HTTP ' + reponse.status);
+                var client = await reponse.json();
+
+                // Factures du client, rangées par dossier
+                var facturesParDossier = {};
+                try {
+                    var repFactures = await appelApi('/factures/client/' + idClient);
+                    if (repFactures.ok) {
+                        var factures = await repFactures.json();
+                        factures.forEach(function (f) { facturesParDossier[f.dossier_id] = f; });
+                    }
+                } catch (errFactures) {
+                    console.error(errFactures);
+                }
+
+                document.getElementById('entete-client').innerHTML =
+                    '<h1>' + esc(client.prenom + ' ' + client.nom) + '</h1>' +
+                    '<div class="grille-coordonnees-etale">' +
+                        '<div class="coord-item"><p class="label">Téléphone</p><p class="valeur">' + esc(client.telephone) + '</p></div>' +
+                        '<div class="coord-item"><p class="label">Adresse</p><p class="valeur">' + esc(client.adresse || '-') + '</p></div>' +
+                        '<div class="coord-item"><p class="label">Dossiers</p><p class="valeur">' + client.dossiers.length + '</p></div>' +
+                        '<div class="coord-item"><p class="label">Total facturé</p><p class="valeur">' + formatMontant(client.total_facture) + '</p></div>' +
+                        '<div class="coord-item accent-orange"><p class="label">Reste à payer</p><p class="valeur">' + formatMontant(client.total_reste) + '</p></div>' +
+                    '</div>';
+
+                var corps = document.getElementById('historique-corps');
+                if (client.dossiers.length === 0) {
+                    corps.innerHTML = '<tr><td colspan="7">Aucun dossier pour ce client.</td></tr>';
+                } else {
+                    var html = '';
+                    client.dossiers.forEach(function (d) {
+                        var f = facturesParDossier[d.id];
+                        var celluleFacture;
+                        if (f) {
+                            celluleFacture =
+                                '<div class="groupe-actions">' +
+                                    '<button type="button" class="btn-voir btn-ouvrir-facture" data-id="' + f.id + '">Voir</button>' +
+                                    '<button type="button" class="btn-danger-petit btn-retirer-facture" data-id="' + f.id + '" data-nom="' + esc(f.nom_fichier) + '" data-ref="' + esc(d.reference) + '">Retirer</button>' +
+                                '</div>';
+                        } else {
+                            celluleFacture = '<button type="button" class="btn-paiement btn-rattacher" data-dossier="' + d.id + '">Rattacher</button>';
+                        }
+
+                        html += '<tr>' +
+                            '<td>' + esc(d.reference) + '</td>' +
+                            '<td>' + esc(d.numero_conteneur || '-') + '</td>' +
+                            '<td><span class="badge badge-' + d.statut + '">' + LIBELLES_STATUT[d.statut] + '</span></td>' +
+                            '<td>' + formatMontant(d.montant_total_du) + '</td>' +
+                            '<td>' + formatMontant(d.montant_verse) + '</td>' +
+                            '<td>' + formatMontant(d.reste_a_payer) + '</td>' +
+                            '<td>' + celluleFacture + '</td>' +
+                            '</tr>';
+                    });
+                    corps.innerHTML = html;
+                }
+            } catch (err) {
+                console.error('Erreur fiche client:', err);
+                document.getElementById('entete-client').innerHTML = '<p style="color:white;">Erreur : ' + esc(err.message) + '</p>';
+            }
+        }
+
+        async function ouvrirFacture(id) {
+            var fenetre = window.open('', '_blank');
+            try {
+                var reponse = await fetch(API_URL + '/factures/' + id + '/fichier', {
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                if (!reponse.ok) throw new Error('Fichier introuvable');
+                var blob = await reponse.blob();
+                var url = URL.createObjectURL(blob);
+                if (fenetre) {
+                    fenetre.location.href = url;
+                } else {
+                    window.location.href = url;
+                }
+            } catch (err) {
+                if (fenetre) fenetre.close();
+                afficherToast('Erreur : ' + err.message, 'erreur');
+            }
+        }
+
+        document.getElementById('historique-corps').addEventListener('click', function (e) {
+            var boutonRattacher = e.target.closest('.btn-rattacher');
+            if (boutonRattacher) {
+                idDossierCible = boutonRattacher.dataset.dossier;
+                document.getElementById('input-facture').click();
+                return;
+            }
+
+            var boutonVoir = e.target.closest('.btn-ouvrir-facture');
+            if (boutonVoir) {
+                ouvrirFacture(boutonVoir.dataset.id);
+                return;
+            }
+
+            var boutonRetrait = e.target.closest('.btn-retirer-facture');
+            if (boutonRetrait) {
+                idFactureCible = boutonRetrait.dataset.id;
+                document.getElementById('texte-retrait').textContent =
+                    'Retirer la facture "' + boutonRetrait.dataset.nom + '" du dossier ' + boutonRetrait.dataset.ref + ' ?';
+                document.getElementById('modal-retrait').classList.remove('cachee');
+            }
+        });
+
+        document.getElementById('input-facture').addEventListener('change', async function () {
+            var champ = this;
+            var fichier = champ.files[0];
+            if (!fichier || !idDossierCible) {
+                champ.value = '';
+                return;
+            }
+
+            if (fichier.size > 10 * 1024 * 1024) {
+                afficherToast('Fichier trop volumineux (10 Mo maximum).', 'erreur');
+                champ.value = '';
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('fichier', fichier);
+
+            try {
+                var reponse = await fetch(API_URL + '/factures/dossier/' + idDossierCible, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + getToken() },
+                    body: formData
+                });
+                var data = await reponse.json().catch(function () { return {}; });
+                if (!reponse.ok) throw new Error(data.erreur || 'échec de l\'envoi');
+                afficherToast('Facture rattachée au dossier !');
+                chargerFicheClient();
+            } catch (err) {
+                console.error(err);
+                afficherToast('Erreur : ' + err.message, 'erreur');
+            }
+            champ.value = '';
+        });
+
+        document.getElementById('non-retrait').addEventListener('click', function () {
+            document.getElementById('modal-retrait').classList.add('cachee');
+        });
+
+        document.getElementById('oui-retrait').addEventListener('click', async function () {
+            try {
+                var reponse = await appelApi('/factures/' + idFactureCible, { method: 'DELETE' });
+                var data = await reponse.json().catch(function () { return {}; });
+                if (!reponse.ok) throw new Error(data.erreur || 'échec');
+                afficherToast('Facture retirée.');
+                document.getElementById('modal-retrait').classList.add('cachee');
+                chargerFicheClient();
+            } catch (err) {
+                afficherToast('Erreur : ' + err.message, 'erreur');
+                document.getElementById('modal-retrait').classList.add('cachee');
+            }
+        });
+
+        chargerFicheClient();
+    </script>
+</body>
+</html>

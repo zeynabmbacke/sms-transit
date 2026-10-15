@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouveau dossier - SMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="app-header"></header>
+    <main>
+        <div class="zone-formulaire-pleine">
+            <h1 class="titre-page-transit">Nouveau dossier</h1><br>
+            <p class="sous-titre-page-transit">Crée un dossier lié à un client existant</p>
+
+            <form id="form-dossier" class="grille-champs-cartes">
+                <div class="carte-champ pleine-largeur" style="position:relative;">
+                    <label>Client</label>
+                    <input type="text" id="recherche-client" placeholder="Tape un nom pour rechercher..." autocomplete="off">
+                    <div id="resultats-recherche" style="display:none; position:absolute; left:2rem; right:2rem; background:white; border:1px solid var(--bordure); border-radius:8px; max-height:200px; overflow-y:auto; z-index:10; box-shadow: var(--ombre);"></div>
+                    <input type="hidden" id="dossier-client-id" required>
+                    <p id="client-selectionne" style="font-size:0.9rem; color: var(--bleu-clair); font-weight:600; margin-top:0.8rem;"></p>
+                </div>
+
+                <div class="carte-champ">
+                    <label>Référence du dossier</label>
+                    <input type="text" id="dossier-reference" placeholder="ex: SMS-2026-002" required>
+                </div>
+                <div class="carte-champ">
+                    <label>Numéro de conteneur</label>
+                    <input type="text" id="dossier-conteneur">
+                </div>
+                <div class="carte-champ">
+                    <label>Nature</label>
+                    <input type="text" id="dossier-nature">
+                </div>
+                <div class="carte-champ">
+                    <label>Volume</label>
+                    <select id="dossier-volume" class="select-volume">
+                        <option value="">Choisir une taille</option>
+                        <option value="20 pieds">20 pieds</option>
+                        <option value="40 pieds">40 pieds</option>
+                        <option value="45 pieds">45 pieds</option>
+                    </select>
+                </div>
+                <div class="carte-champ">
+                    <label>Compagnie</label>
+                    <input type="text" id="dossier-compagnie" placeholder="ex: Maersk, CMA CGM...">
+                </div>
+                <div class="carte-champ">
+                    <label>Numéro de déclaration</label>
+                    <input type="text" id="dossier-declaration">
+                </div>
+                <div class="carte-champ">
+                    <label>Date d'arrivée</label>
+                    <input type="date" id="dossier-date-arrivee">
+                </div>
+                <div class="carte-champ">
+                    <label>Montant total dû </label>
+                    <input type="number" id="dossier-montant" min="0">
+                </div>
+
+                <button type="submit" class="carte-bouton-submit">Créer le dossier</button>
+            </form>
+
+            <div id="zone-retour"></div>
+        </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script>
+        function esc(t) {
+            return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        document.getElementById('form-dossier').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            var clientId = document.getElementById('dossier-client-id').value;
+            if (!clientId) {
+                afficherToast('Merci de selectionner un client dans la liste.', 'erreur');
+                return;
+            }
+            var nouveauDossier = {
+                client_id: clientId,
+                reference: document.getElementById('dossier-reference').value,
+                numero_conteneur: document.getElementById('dossier-conteneur').value,
+                nature_marchandise: document.getElementById('dossier-nature').value,
+                volume: document.getElementById('dossier-volume').value,
+                compagnie_maritime: document.getElementById('dossier-compagnie').value,
+                numero_declaration: document.getElementById('dossier-declaration').value,
+                date_arrivee_prevue: document.getElementById('dossier-date-arrivee').value,
+                montant_total_du: document.getElementById('dossier-montant').value || 0
+            };
+            try {
+                var reponse = await appelApi('/dossiers', {
+                    method: 'POST',
+                    body: JSON.stringify(nouveauDossier)
+                });
+                var data = await reponse.json().catch(function () { return {}; });
+                if (!reponse.ok) throw new Error(data.erreur || 'echec creation');
+                afficherToast('Dossier créé avec succès !');
+                document.getElementById('form-dossier').reset();
+                document.getElementById('dossier-client-id').value = '';
+                document.getElementById('client-selectionne').textContent = '';
+            } catch (err) {
+                console.error(err);
+                afficherToast('Erreur : ' + err.message, 'erreur');
+            }
+        });
+
+        executerSansBloquer(function () { protegerPage(); });
+        executerSansBloquer(function () { injecterHeader(true); });
+        executerSansBloquer(function () { injecterMenuLateral('menu-lateral'); });
+        executerSansBloquer(function () { injecterBoutonRetour('zone-retour'); });
+
+        var tousLesClients = [];
+
+        async function chargerClientsPourRecherche() {
+            try {
+                var reponse = await appelApi('/clients');
+                tousLesClients = await reponse.json();
+            } catch (err) { console.error(err); }
+        }
+
+        var inputRecherche = document.getElementById('recherche-client');
+        var resultatsEl = document.getElementById('resultats-recherche');
+
+        inputRecherche.addEventListener('input', function () {
+            var texte = inputRecherche.value.trim().toLowerCase();
+            document.getElementById('dossier-client-id').value = '';
+            document.getElementById('client-selectionne').textContent = '';
+
+            if (texte.length < 1) {
+                resultatsEl.style.display = 'none';
+                return;
+            }
+
+            var correspondances = tousLesClients.filter(function (c) {
+                return (c.prenom + ' ' + c.nom).toLowerCase().indexOf(texte) !== -1;
+            }).slice(0, 8);
+
+            if (correspondances.length === 0) {
+                resultatsEl.innerHTML = '<div style="padding:0.7rem; color:#667085; font-size:0.85rem;">Aucun client trouve.</div>';
+            } else {
+                var html = '';
+                correspondances.forEach(function (c) {
+                    html += '<div class="resultat-client" data-id="' + c.id + '" data-nom="' + esc(c.prenom + ' ' + c.nom) + '" style="padding:0.8rem 1rem; cursor:pointer; border-bottom:1px solid #f0f2f5;">' +
+                        esc(c.prenom + ' ' + c.nom) + ' <span style="color:#667085; font-size:0.8rem;">- ' + esc(c.telephone) + '</span></div>';
+                });
+                resultatsEl.innerHTML = html;
+            }
+            resultatsEl.style.display = 'block';
+        });
+
+        resultatsEl.addEventListener('click', function (e) {
+            var el = e.target.closest('.resultat-client');
+            if (!el) return;
+            document.getElementById('dossier-client-id').value = el.dataset.id;
+            document.getElementById('client-selectionne').textContent = 'Client selectionné : ' + el.dataset.nom;
+            inputRecherche.value = el.dataset.nom;
+            resultatsEl.style.display = 'none';
+        });
+
+        chargerClientsPourRecherche();
+    </script>
+</body>
+</html>

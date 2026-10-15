@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouveau client - SMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="app-header"></header>
+    <main>
+        <div class="zone-formulaire-pleine">
+            <h1 class="titre-page-transit">Nouveau client</h1><br>
+            <p class="sous-titre-page-transit">Ajoute un client à la base</p>
+
+            <form id="form-client" class="grille-champs-cartes">
+                <div class="carte-champ">
+                    <label>Prénom</label>
+                    <input type="text" id="client-prenom" required>
+                </div>
+                <div class="carte-champ">
+                    <label>Nom</label>
+                    <input type="text" id="client-nom" required>
+                </div>
+                <div class="carte-champ">
+                    <label>Téléphone</label>
+                    <input type="tel" id="client-telephone" required>
+                </div>
+                <div class="carte-champ">
+                    <label>Adresse</label>
+                    <input type="text" id="client-adresse">
+                </div>
+                <button type="submit" class="carte-bouton-submit">Ajouter le client</button>
+            </form><br><br>
+
+            <div id="zone-retour"></div>
+        </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script>
+        // L'ecouteur du formulaire est attache EN PREMIER, avant tout le reste,
+        // pour qu'il fonctionne meme si autre chose plus bas rencontre un probleme.
+        document.getElementById('form-client').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            console.log('Formulaire soumis, envoi en cours...');
+
+            var nouveauClient = {
+                prenom: document.getElementById('client-prenom').value,
+                nom: document.getElementById('client-nom').value,
+                telephone: document.getElementById('client-telephone').value,
+                adresse: document.getElementById('client-adresse').value
+            };
+
+            try {
+                var reponse = await appelApi('/clients', {
+                    method: 'POST',
+                    body: JSON.stringify(nouveauClient)
+                });
+                console.log('Reponse recue, statut :', reponse.status);
+
+                if (!reponse.ok) {
+                    var erreurData = await reponse.json().catch(function () { return {}; });
+                    throw new Error(erreurData.erreur || 'Erreur HTTP ' + reponse.status);
+                }
+
+                afficherToast('Client ajouté avec succès !');
+                document.getElementById('form-client').reset();
+            } catch (err) {
+                console.error('Erreur lors de l ajout du client :', err);
+                afficherToast('Erreur : ' + err.message, 'erreur');
+            }
+        });
+
+        // Le reste s'execute apres, dans un try/catch pour ne jamais bloquer le formulaire
+        try {
+            executerSansBloquer(function () { protegerPage(); });
+executerSansBloquer(function () { injecterHeader(true); });
+executerSansBloquer(function () { injecterMenuLateral('menu-lateral'); });
+executerSansBloquer(function () { injecterBoutonRetour('zone-retour'); });
+        } catch (err) {
+            console.error('Erreur initialisation page :', err);
+        }
+    </script>
+</body>
+</html>

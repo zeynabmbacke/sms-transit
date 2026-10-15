@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier le dossier - SMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="app-header"></header>
+    <main>
+        <h1 class="titre-page-transit">Modifier le dossier</h1><br>
+        <p class="sous-titre-page-transit">Corrige les informations du dossier, son montant ou ses versements</p>
+
+        <form id="form-modif" class="grille-champs-cartes" style="margin-bottom: 2rem;">
+            <div class="carte-champ pleine-largeur">
+                <label>Client</label>
+                <input type="text" id="mod-client" disabled>
+            </div>
+            <div class="carte-champ">
+                <label>Référence du dossier</label>
+                <input type="text" id="mod-reference" required>
+            </div>
+            <div class="carte-champ">
+                <label>Numéro de conteneur</label>
+                <input type="text" id="mod-conteneur">
+            </div>
+            <div class="carte-champ">
+                <label>Nature</label>
+                <input type="text" id="mod-nature">
+            </div>
+            <div class="carte-champ">
+                <label>Volume</label>
+                <select id="mod-volume" class="select-volume">
+                    <option value="">Choisir une taille</option>
+                    <option value="20 pieds">20 pieds</option>
+                    <option value="40 pieds">40 pieds</option>
+                    <option value="45 pieds">45 pieds</option>
+                </select>
+            </div>
+            <div class="carte-champ">
+                <label>Compagnie</label>
+                <input type="text" id="mod-compagnie">
+            </div>
+            <div class="carte-champ">
+                <label>Numéro de déclaration</label>
+                <input type="text" id="mod-declaration">
+            </div>
+            <div class="carte-champ">
+                <label>Date d'arrivée</label>
+                <input type="date" id="mod-date-arrivee">
+            </div>
+            <div class="carte-champ">
+                <label>Montant total dû (FCFA)</label>
+                <input type="number" id="mod-montant" min="0">
+            </div>
+
+            <button type="submit" class="carte-bouton-submit">Enregistrer les modifications</button>
+        </form>
+
+        <section>
+            <h2>Versements enregistrés</h2>
+            <p id="total-verse" style="margin-bottom: 1rem; color: var(--texte-secondaire);"></p>
+            <table>
+                <thead>
+                    <tr><th>Date</th><th>Mode</th><th>Montant</th><th id="th-action-versement">Action</th></tr>
+                </thead>
+                <tbody id="versements-corps"></tbody>
+            </table>
+        </section>
+
+        <div id="zone-retour"></div>
+    </main>
+
+    <div id="modal-annulation" class="modal cachee">
+        <div class="modal-contenu">
+            <h3>Annuler ce versement</h3>
+            <p style="color: var(--texte-secondaire); margin-bottom: 1rem;" id="texte-annulation"></p>
+            <div class="modal-actions">
+                <button id="non-annulation" style="background:#eef0f3;">NON</button>
+                <button id="oui-annulation" style="background:#b23a3a; color:white;">OUI</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="common.js"></script>
+    <script>
+        var idDossier = new URLSearchParams(window.location.search).get('id');
+        var idVersementCible = null;
+
+        // Seul l'administrateur (le directeur) peut annuler un versement ; les agents voient seulement l'historique.
+        var utilisateurCourant = getUtilisateur();
+        var estAdmin = !!(utilisateurCourant && utilisateurCourant.role === 'admin');
+        if (!estAdmin) {
+            document.getElementById('th-action-versement').style.display = 'none';
+        }
+
+        var LIBELLES_MODE = { especes: 'Espèces', virement: 'Virement', mobile_money: 'Mobile Money' };
+
+        function formatDateCourte(s) {
+            if (!s) return '-';
+            var p = String(s).slice(0, 10).split('-');
+            return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : '-';
+        }
+
+        document.getElementById('form-modif').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            var corps = {
+                reference: document.getElementById('mod-reference').value,
+                numero_conteneur: document.getElementById('mod-conteneur').value,
+                nature_marchandise: document.getElementById('mod-nature').value,
+                volume: document.getElementById('mod-volume').value,
+                compagnie_maritime: document.getElementById('mod-compagnie').value,
+                numero_declaration: document.getElementById('mod-declaration').value,
+                date_arrivee_prevue: document.getElementById('mod-date-arrivee').value,
+                montant_total_du: document.getElementById('mod-montant').value || 0
+            };
+            try {
+                var reponse = await appelApi('/dossiers/' + idDossier, {
+                    method: 'PUT',
+                    body: JSON.stringify(corps)
+                });
+                var data = await reponse.json().catch(function () { return {}; });
+                if (!reponse.ok) throw new Error(data.erreur || 'échec de la modification');
+                afficherToast('Dossier modifié avec succès !');
+                setTimeout(function () { window.location.href = 'dossiers-en-cours.html'; }, 1200);
+            } catch (err) {
+                console.error(err);
+                afficherToast('Erreur : ' + err.message, 'erreur');
+            }
+        });
+
+        executerSansBloquer(function () { protegerPage(); });
+        executerSansBloquer(function () { injecterHeader(true); });
+        executerSansBloquer(function () { injecterMenuLateral('menu-lateral'); });
+        executerSansBloquer(function () { injecterBoutonRetour('zone-retour'); });
+
+        function choisirVolume(valeur) {
+            var select = document.getElementById('mod-volume');
+            if (!valeur) {
+                select.value = '';
+                return;
+            }
+            select.value = valeur;
+            // Si l'ancienne valeur n'est pas dans la liste, on l'ajoute pour ne rien perdre
+            if (select.value !== valeur) {
+                var option = document.createElement('option');
+                option.value = valeur;
+                option.textContent = valeur;
+                select.appendChild(option);
+                select.value = valeur;
+            }
+        }
+
+        async function chargerDossier() {
+            if (!idDossier) {
+                afficherToast('Aucun dossier sélectionné.', 'erreur');
+                return;
+            }
+            try {
+                var reponse = await appelApi('/dossiers/' + idDossier);
+                if (!reponse.ok) throw new Error('Dossier introuvable');
+                var d = await reponse.json();
+
+                document.getElementById('mod-client').value = d.client_prenom + ' ' + d.client_nom;
+                document.getElementById('mod-reference').value = d.reference || '';
+                document.getElementById('mod-conteneur').value = d.numero_conteneur || '';
+                document.getElementById('mod-nature').value = d.nature_marchandise || '';
+                choisirVolume(d.volume);
+                document.getElementById('mod-compagnie').value = d.compagnie_maritime || '';
+                document.getElementById('mod-declaration').value = d.numero_declaration || '';
+                document.getElementById('mod-date-arrivee').value = d.date_arrivee_prevue ? String(d.date_arrivee_prevue).slice(0, 10) : '';
+                document.getElementById('mod-montant').value = Number(d.montant_total_du);
+            } catch (err) {
+                console.error(err);
+                afficherToast('Erreur : ' + err.message, 'erreur');
+            }
+        }
+
+        async function chargerVersements() {
+            try {
+                var reponse = await appelApi('/paiements/dossier/' + idDossier);
+                var versements = await reponse.json();
+                var corps = document.getElementById('versements-corps');
+
+                var total = 0;
+                versements.forEach(function (v) { total += Number(v.montant); });
+                document.getElementById('total-verse').innerHTML = 'Total versé : ' + formatMontant(total);
+
+                if (versements.length === 0) {
+                    corps.innerHTML = '<tr><td colspan="' + (estAdmin ? 4 : 3) + '">Aucun versement enregistré.</td></tr>';
+                    return;
+                }
+
+                var html = '';
+                versements.forEach(function (v) {
+                    html += '<tr>' +
+                        '<td>' + formatDateCourte(v.date_versement) + '</td>' +
+                        '<td>' + (LIBELLES_MODE[v.mode_paiement] || v.mode_paiement) + '</td>' +
+                        '<td>' + formatMontant(v.montant) + '</td>' +
+                        (estAdmin
+                            ? '<td><button type="button" class="btn-danger-petit" data-id="' + v.id + '" data-montant="' + Number(v.montant).toLocaleString('fr-FR') + '">Annuler ce versement</button></td>'
+                            : '') +
+                        '</tr>';
+                });
+                corps.innerHTML = html;
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        document.getElementById('versements-corps').addEventListener('click', function (e) {
+            var btn = e.target.closest('.btn-danger-petit');
+            if (!btn) return;
+            idVersementCible = btn.dataset.id;
+            document.getElementById('texte-annulation').textContent =
+                'Annuler le versement de ' + btn.dataset.montant + ' FCFA ? Le reste à payer sera recalculé.';
+            document.getElementById('modal-annulation').classList.remove('cachee');
+        });
+
+        document.getElementById('non-annulation').addEventListener('click', function () {
+            document.getElementById('modal-annulation').classList.add('cachee');
+        });
+
+        document.getElementById('oui-annulation').addEventListener('click', async function () {
+            try {
+                var reponse = await appelApi('/paiements/' + idVersementCible, { method: 'DELETE' });
+                var data = await reponse.json().catch(function () { return {}; });
+                if (!reponse.ok) throw new Error(data.erreur || 'échec');
+                afficherToast('Versement annulé.');
+                document.getElementById('modal-annulation').classList.add('cachee');
+                chargerVersements();
+            } catch (err) {
+                afficherToast('Erreur : ' + err.message, 'erreur');
+                document.getElementById('modal-annulation').classList.add('cachee');
+            }
+        });
+
+        chargerDossier();
+        chargerVersements();
+    </script>
+</body>
+</html>

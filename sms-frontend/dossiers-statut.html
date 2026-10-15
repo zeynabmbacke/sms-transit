@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dossiers par statut - SMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="app-header"></header>
+    <main>
+        <h1 class="titre-page-transit" id="titre-statut">Dossiers</h1><br>
+        <p class="sous-titre-page-transit" id="sous-titre-statut">Liste des dossiers concernés</p>
+
+        <input type="text" id="recherche-statut" class="barre-recherche" placeholder="Rechercher par numéro de conteneur, référence ou client...">
+
+        <section>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Référence</th><th>Client</th><th>Conteneur</th><th>Nature</th>
+                        <th>Compagnie</th><th>Date d'arrivée</th><th>Reste à payer</th><th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="statut-corps"></tbody>
+            </table>
+        </section>
+
+        <div id="zone-retour"></div>
+    </main>
+
+    <div id="modal-paiement" class="modal cachee">
+        <div class="modal-contenu">
+            <h3>Enregistrer un paiement</h3>
+            <form id="form-paiement" class="form-verticale">
+                <input type="hidden" id="paiement-dossier-id">
+                <label>Montant versé (FCFA)</label>
+                <input type="number" id="paiement-montant" min="1" required>
+                <label>Mode de paiement</label>
+                <select id="paiement-mode">
+                    <option value="especes">Espèces</option>
+                    <option value="virement">Virement</option>
+                    <option value="mobile_money">Mobile Money</option>
+                </select>
+                <div class="modal-actions">
+                    <button type="button" id="annuler-paiement">Annuler</button>
+                    <button type="submit">Enregistrer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="common.js"></script>
+    <script>
+        function esc(t) {
+            return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function formatDateCourte(s) {
+            if (!s) return '-';
+            var p = String(s).slice(0, 10).split('-');
+            return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : '-';
+        }
+
+        executerSansBloquer(function () { protegerPage(); });
+        executerSansBloquer(function () { injecterHeader(true); });
+        executerSansBloquer(function () { injecterMenuLateral('menu-lateral'); });
+        executerSansBloquer(function () { injecterBoutonRetour('zone-retour'); });
+
+        var statutDemande = new URLSearchParams(window.location.search).get('statut');
+        var dossiersDuStatut = [];
+
+        function afficher(liste) {
+            var corps = document.getElementById('statut-corps');
+            if (liste.length === 0) {
+                corps.innerHTML = '<tr><td colspan="8">Aucun dossier trouvé.</td></tr>';
+                return;
+            }
+            var html = '';
+            liste.forEach(function (d) {
+                var reste = Number(d.reste_a_payer);
+                var boutonPaiement = reste > 0
+                    ? '<button type="button" class="btn-paiement" data-id="' + d.id + '">Paiement</button>'
+                    : '<span style="color:#155724; font-weight:700; font-size:0.8rem;">Soldé</span>';
+
+                html += '<tr>' +
+                    '<td>' + esc(d.reference) + '</td>' +
+                    '<td>' + esc(d.client_prenom + ' ' + d.client_nom) + '</td>' +
+                    '<td>' + esc(d.numero_conteneur || '-') + '</td>' +
+                    '<td>' + esc(d.nature_marchandise || '-') + '</td>' +
+                    '<td>' + esc(d.compagnie_maritime || '-') + '</td>' +
+                    '<td>' + formatDateCourte(d.date_arrivee_prevue) + '</td>' +
+                    '<td>' + formatMontant(d.reste_a_payer) + '</td>' +
+                    '<td><div class="groupe-actions">' +
+                        boutonPaiement +
+                        '<a class="btn-voir" href="modifier-dossier.html?id=' + d.id + '">Modifier</a>' +
+                    '</div></td>' +
+                    '</tr>';
+            });
+            corps.innerHTML = html;
+        }
+
+        function appliquerFiltre() {
+            var texte = document.getElementById('recherche-statut').value.trim().toLowerCase();
+            if (texte.length === 0) {
+                afficher(dossiersDuStatut);
+                return;
+            }
+            afficher(dossiersDuStatut.filter(function (d) {
+                var t = [d.numero_conteneur, d.reference, d.client_prenom + ' ' + d.client_nom].join(' ').toLowerCase();
+                return t.indexOf(texte) !== -1;
+            }));
+        }
+
+        async function charger() {
+            if (!statutDemande || !LIBELLES_STATUT[statutDemande]) {
+                document.getElementById('titre-statut').textContent = 'Statut inconnu';
+                document.getElementById('sous-titre-statut').textContent = 'Reviens au dashboard et clique sur un statut.';
+                return;
+            }
+            document.getElementById('titre-statut').textContent = LIBELLES_STATUT[statutDemande];
+            try {
+                var reponse = await appelApi('/dossiers');
+                var tous = await reponse.json();
+                dossiersDuStatut = tous.filter(function (d) { return d.statut === statutDemande; });
+                document.getElementById('sous-titre-statut').textContent =
+                    dossiersDuStatut.length + ' dossier(s) concerné(s)';
+                appliquerFiltre();
+            } catch (err) {
+                console.error(err);
+                afficherToast('Erreur chargement dossiers : ' + err.message, 'erreur');
+            }
+        }
+
+        document.getElementById('recherche-statut').addEventListener('input', appliquerFiltre);
+
+        document.getElementById('statut-corps').addEventListener('click', function (e) {
+            var btn = e.target.closest('.btn-paiement');
+            if (!btn) return;
+            document.getElementById('paiement-dossier-id').value = btn.dataset.id;
+            document.getElementById('modal-paiement').classList.remove('cachee');
+        });
+
+        document.getElementById('annuler-paiement').addEventListener('click', function () {
+            document.getElementById('modal-paiement').classList.add('cachee');
+            document.getElementById('form-paiement').reset();
+        });
+
+        document.getElementById('form-paiement').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            var paiement = {
+                dossier_id: document.getElementById('paiement-dossier-id').value,
+                montant: document.getElementById('paiement-montant').value,
+                mode_paiement: document.getElementById('paiement-mode').value
+            };
+            try {
+                var reponse = await appelApi('/paiements', {
+                    method: 'POST',
+                    body: JSON.stringify(paiement)
+                });
+                if (!reponse.ok) throw new Error();
+                afficherToast('Paiement enregistré !');
+                document.getElementById('modal-paiement').classList.add('cachee');
+                document.getElementById('form-paiement').reset();
+                charger();
+            } catch (err) {
+                afficherToast('Erreur lors de l\'enregistrement du paiement.', 'erreur');
+            }
+        });
+
+        charger();
+    </script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clients a traiter - SMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header id="app-header"></header>
+    <main>
+        <h1 class="titre-page-transit">Clients à traiter</h1><br>
+        <p class="sous-titre-page-transit">Triés par ordre d'arrivée.</p>
+        <section>
+            <table>
+                <thead>
+                    <tr><th>#</th><th>Client</th><th>Téléphone</th><th>Dossiers en cours</th><th>Attend depuis</th><th></th></tr>
+                </thead>
+                <tbody id="clients-corps"></tbody>
+            </table>
+        </section>
+        <div id="zone-retour"></div>
+    </main>
+
+    <script src="common.js"></script>
+    <script>
+      executerSansBloquer(function () { protegerPage(); });
+executerSansBloquer(function () { injecterHeader(true); });
+executerSansBloquer(function () { injecterMenuLateral('menu-lateral'); });
+executerSansBloquer(function () { injecterBoutonRetour('zone-retour'); });
+
+        function formatDate(dateStr) {
+            return new Date(dateStr).toLocaleDateString('fr-FR');
+        }
+
+        async function chargerClientsFifo() {
+            try {
+                var reponse = await appelApi('/clients/actifs/fifo');
+                var clients = await reponse.json();
+                var corps = document.getElementById('clients-corps');
+
+                if (clients.length === 0) {
+                    corps.innerHTML = '<tr><td colspan="6">Aucun client avec un dossier en cours.</td></tr>';
+                    return;
+                }
+
+                var html = '';
+                clients.forEach(function (c, index) {
+                    html += '<tr>' +
+                        '<td>' + (index + 1) + '</td>' +
+                        '<td>' + c.prenom + ' ' + c.nom + '</td>' +
+                        '<td>' + c.telephone + '</td>' +
+                        '<td>' + c.nombre_dossiers_en_cours + '</td>' +
+                        '<td>' + formatDate(c.premier_dossier_en_cours) + '</td>' +
+                        '<td><a href="client.html?id=' + c.id + '" class="btn-voir">Voir detail →</a></td>' +
+                        '</tr>';
+                });
+                corps.innerHTML = html;
+            } catch (err) { console.error(err); }
+        }
+
+        chargerClientsFifo();
+    </script>
+</body>
+</html>

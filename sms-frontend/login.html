@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - SMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="page-connexion-split">
+        <div class="zone-logo-connexion">
+            <div>
+                <img src="logo.png" alt="SMS - Import Export Transit" style="display:block; margin:0 auto 1rem; width:220px; max-width:70%; height:auto; background:#fff; padding:14px; border-radius:50%; box-shadow:0 8px 30px rgba(0,0,0,0.3);">
+                <div class="texte-entreprise">
+                    <div class="nom-entreprise"><span class="mot-sms">SMS</span></div>
+                    <div class="slogan-entreprise">Import · Export · Transit</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="zone-formulaire-connexion">
+            <div class="carte-connexion">
+                <p class="sous-titre" style="margin-bottom: 1.5rem; font-size: 1.1rem; color: var(--bleu-fonce); font-weight:700;">Connexion</p>
+
+                <form id="form-login" class="form-verticale">
+                    <label for="login-user">Nom d'utilisateur</label>
+                    <input type="text" id="login-user" required autocomplete="username">
+
+                    <label for="login-pass">Mot de passe</label>
+                    <input type="password" id="login-pass" required autocomplete="current-password">
+
+                    <button type="submit">Se connecter</button>
+                </form>
+                <p id="login-erreur" style="color:#9a5b00; margin-top:1rem; font-size:0.85rem;"></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="common.js"></script>
+    <script>
+        if (getToken()) {
+            window.location.href = 'accueil.html';
+        }
+
+        document.getElementById('form-login').addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            var nom_utilisateur = document.getElementById('login-user').value;
+            var mot_de_passe = document.getElementById('login-pass').value;
+            var erreurEl = document.getElementById('login-erreur');
+
+            try {
+                var reponse = await fetch(API_URL + '/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nom_utilisateur: nom_utilisateur, mot_de_passe: mot_de_passe })
+                });
+
+                var data = await reponse.json();
+
+                if (!reponse.ok) {
+                    erreurEl.textContent = data.erreur || 'Erreur de connexion';
+                    return;
+                }
+
+                sauvegarderSession(data.token, data.utilisateur);
+                window.location.href = 'accueil.html';
+            } catch (err) {
+                erreurEl.textContent = 'Impossible de contacter le serveur.';
+            }
+        });
+    </script>
+</body>
+</html>

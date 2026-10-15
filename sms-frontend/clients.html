@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tous les clients - SMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="app-header"></header>
+    <main><br><br>
+        <h1 class="titre-page-transit">Tous les clients</h1><br>
+        <p class="sous-titre-page-transit">Liste complète avec coordonnées et suivi des paiements</p>
+
+        <input type="text" id="recherche-clients" class="barre-recherche" placeholder="Rechercher un client par nom ou telephone..."><br>
+
+        <section>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Prenom</th><th>Nom</th><th>Téléphone</th><th>Adresse</th>
+                        <th>Nb dossiers</th><th>Reste à payer</th><th></th>
+                    </tr>
+                </thead>
+                <tbody id="clients-corps"></tbody>
+            </table>
+        </section>
+        <div id="zone-retour"></div>
+    </main>
+
+    <script src="common.js"></script>
+    <script>
+        executerSansBloquer(function () { protegerPage(); });
+        executerSansBloquer(function () { injecterHeader(true); });
+        executerSansBloquer(function () { injecterMenuLateral('menu-lateral'); });
+        executerSansBloquer(function () { injecterBoutonRetour('zone-retour'); });
+
+        var tousLesClients = [];
+
+        function afficherClients(liste) {
+            var corps = document.getElementById('clients-corps');
+            if (liste.length === 0) {
+                corps.innerHTML = '<tr><td colspan="7">Aucun client trouvé.</td></tr>';
+                return;
+            }
+            var html = '';
+            liste.forEach(function (c) {
+                html += '<tr>' +
+                    '<td>' + c.prenom + '</td>' +
+                    '<td>' + c.nom + '</td>' +
+                    '<td>' + c.telephone + '</td>' +
+                    '<td>' + (c.adresse || '-') + '</td>' +
+                    '<td>' + c.nombre_dossiers + '</td>' +
+                    '<td>' + formatMontant(c.reste_a_payer_total) + '</td>' +
+                    '<td><a href="client.html?id=' + c.id + '" class="btn-voir">Voir detail →</a></td>' +
+                    '</tr>';
+            });
+            corps.innerHTML = html;
+        }
+
+        async function chargerClients() {
+            try {
+                var reponse = await appelApi('/clients');
+                if (!reponse.ok) throw new Error('Le serveur a repondu avec le statut ' + reponse.status);
+                tousLesClients = await reponse.json();
+                afficherClients(tousLesClients);
+            } catch (err) {
+                console.error('Erreur chargement clients:', err);
+                afficherToast('Erreur chargement clients : ' + err.message, 'erreur');
+            }
+        }
+
+        document.getElementById('recherche-clients').addEventListener('input', function () {
+            var texte = this.value.trim().toLowerCase();
+            if (texte.length === 0) {
+                afficherClients(tousLesClients);
+                return;
+            }
+            var filtres = tousLesClients.filter(function (c) {
+                return (c.prenom + ' ' + c.nom).toLowerCase().indexOf(texte) !== -1 ||
+                       c.telephone.indexOf(texte) !== -1;
+            });
+            afficherClients(filtres);
+        });
+
+        chargerClients();
+    </script>
+</body>
+</html>

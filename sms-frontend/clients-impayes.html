@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clients avec impayés - SMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="app-header"></header>
+    <main>
+        <h1 class="titre-page-transit">Clients avec impayés</h1><br>
+        <p class="sous-titre-page-transit" id="sous-titre-impayes">Clients ayant un solde restant à payer</p>
+
+        <input type="text" id="recherche-impayes" class="barre-recherche" placeholder="Rechercher par nom ou téléphone...">
+
+        <section>
+            <table>
+                <thead>
+                    <tr><th>Client</th><th>Téléphone</th><th>Dossiers</th><th>Reste à payer</th><th></th></tr>
+                </thead>
+                <tbody id="impayes-corps"></tbody>
+            </table>
+        </section>
+
+        <div id="zone-retour"></div>
+    </main>
+
+    <script src="common.js"></script>
+    <script>
+        function esc(t) {
+            return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        executerSansBloquer(function () { protegerPage(); });
+        executerSansBloquer(function () { injecterHeader(true); });
+        executerSansBloquer(function () { injecterMenuLateral('menu-lateral'); });
+        executerSansBloquer(function () { injecterBoutonRetour('zone-retour'); });
+
+        var clientsImpayes = [];
+
+        function afficher(liste) {
+            var corps = document.getElementById('impayes-corps');
+            if (liste.length === 0) {
+                corps.innerHTML = '<tr><td colspan="5">Aucun client avec impayés.</td></tr>';
+                return;
+            }
+            var html = '';
+            liste.forEach(function (c) {
+                html += '<tr>' +
+                    '<td>' + esc(c.prenom + ' ' + c.nom) + '</td>' +
+                    '<td>' + esc(c.telephone || '-') + '</td>' +
+                    '<td>' + c.nombre_dossiers + '</td>' +
+                    '<td>' + formatMontant(c.reste_a_payer_total) + '</td>' +
+                    '<td><a class="btn-voir" href="client.html?id=' + c.id + '">Voir detail →</a></td>' +
+                    '</tr>';
+            });
+            corps.innerHTML = html;
+        }
+
+        function appliquerFiltre() {
+            var texte = document.getElementById('recherche-impayes').value.trim().toLowerCase();
+            if (texte.length === 0) {
+                afficher(clientsImpayes);
+                return;
+            }
+            afficher(clientsImpayes.filter(function (c) {
+                var t = [c.prenom, c.nom, c.telephone].join(' ').toLowerCase();
+                return t.indexOf(texte) !== -1;
+            }));
+        }
+
+        async function charger() {
+            try {
+                var reponse = await appelApi('/clients');
+                var tous = await reponse.json();
+                clientsImpayes = tous
+                    .filter(function (c) { return Number(c.reste_a_payer_total) > 0; })
+                    .sort(function (a, b) { return Number(b.reste_a_payer_total) - Number(a.reste_a_payer_total); });
+                document.getElementById('sous-titre-impayes').textContent =
+                    clientsImpayes.length + ' client(s) avec un solde restant à payer';
+                appliquerFiltre();
+            } catch (err) {
+                console.error(err);
+                afficherToast('Erreur chargement des clients : ' + err.message, 'erreur');
+            }
+        }
+
+        document.getElementById('recherche-impayes').addEventListener('input', appliquerFiltre);
+
+        charger();
+    </script>
+</body>
+</html>

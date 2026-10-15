@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gérer les agents - SMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="app-header"></header>
+    <main>
+        <h1 class="titre-page-transit">Gérer les agents</h1>
+        <p class="sous-titre-page-transit">Crée des comptes pour ton équipe</p>
+
+        <form id="form-agent" class="grille-champs-cartes" style="margin-bottom: 2rem;">
+            <div class="carte-champ">
+                <label>Nom d'utilisateur</label>
+                <input type="text" id="agent-user" required>
+            </div>
+            <div class="carte-champ">
+                <label>Mot de passe</label>
+                <input type="password" id="agent-pass" required>
+            </div>
+            <button type="submit" class="carte-bouton-submit">Créer le compte agent</button>
+        </form>
+
+        <section>
+            <h2>Comptes existants</h2>
+            <table>
+                <thead><tr><th>Utilisateur</th><th>Rôle</th><th>Créé le</th><th></th></tr></thead>
+                <tbody id="utilisateurs-corps"></tbody>
+            </table>
+        </section>
+
+        <div id="zone-retour"></div>
+    </main>
+
+    <div id="modal-suppression" class="modal cachee">
+        <div class="modal-contenu">
+        
+            <p style="color: var(--texte-secondaire); margin-bottom: 1rem;" id="texte-confirmation-suppr"></p>
+            <div class="modal-actions">
+                <button id="annuler-suppression">Annuler</button>
+                <button id="confirmer-suppression" style="background: #b23a3a; color:white;">Supprimer</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-reset" class="modal cachee">
+        <div class="modal-contenu">
+            <h3>Réinitialiser le mot de passe</h3>
+            <form id="form-reset" class="form-verticale">
+                <label>Nouveau mot de passe</label>
+                <input type="text" id="nouveau-mdp" required>
+                <div class="modal-actions">
+                    <button type="button" id="annuler-reset">Annuler</button>
+                    <button type="submit">Valider</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="common.js"></script>
+    <script>
+        var idUtilisateurCible = null;
+
+        document.getElementById('form-agent').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            var nom_utilisateur = document.getElementById('agent-user').value;
+            var mot_de_passe = document.getElementById('agent-pass').value;
+            try {
+                var reponse = await appelApi('/auth/creer-utilisateur', {
+                    method: 'POST',
+                    body: JSON.stringify({ nom_utilisateur: nom_utilisateur, mot_de_passe: mot_de_passe })
+                });
+                var data = await reponse.json();
+                if (!reponse.ok) throw new Error(data.erreur || 'Erreur');
+                afficherToast('Compte agent créé avec succès !');
+                document.getElementById('form-agent').reset();
+                chargerUtilisateurs();
+            } catch (err) {
+                afficherToast('Erreur : ' + err.message, 'erreur');
+            }
+        });
+
+        executerSansBloquer(function () { protegerPage(); });
+        executerSansBloquer(function () { injecterHeader(true); });
+        executerSansBloquer(function () { injecterMenuLateral('menu-lateral'); });
+        executerSansBloquer(function () { injecterBoutonRetour('zone-retour'); });
+
+        executerSansBloquer(function () {
+            var utilisateur = getUtilisateur();
+            if (!utilisateur || utilisateur.role !== 'admin') {
+                afficherToast('Accès réservé à l\'administrateur.', 'erreur');
+                setTimeout(function () { window.location.href = 'accueil.html'; }, 1500);
+            }
+        });
+
+        async function chargerUtilisateurs() {
+            try {
+                var reponse = await appelApi('/auth/utilisateurs');
+                var users = await reponse.json();
+                var html = '';
+                users.forEach(function (u) {
+                    var boutons = '';
+                    if (u.role !== 'admin') {
+                        boutons =
+                            '<button class="btn-voir" data-id="' + u.id + '" data-nom="' + u.nom_utilisateur + '" onclick="ouvrirReset(this)">Réinitialiser le mot de passe</button> ' +
+                            '<button class="btn-paiement" data-id="' + u.id + '" data-nom="' + u.nom_utilisateur + '" onclick="ouvrirSuppression(this)">Supprimer</button>';
+                    } else {
+                        boutons = '<span style="color: var(--texte-secondaire); font-size:0.85rem;">Compte principal</span>';
+                    }
+                    html += '<tr><td>' + u.nom_utilisateur + '</td><td>' + u.role + '</td><td>' + new Date(u.date_creation).toLocaleDateString('fr-FR') + '</td><td>' + boutons + '</td></tr>';
+                });
+                document.getElementById('utilisateurs-corps').innerHTML = html;
+            } catch (err) { console.error(err); }
+        }
+
+        function ouvrirSuppression(btn) {
+            idUtilisateurCible = btn.dataset.id;
+            document.getElementById('texte-confirmation-suppr').textContent = 'Voulez-vous supprimer definitivement le compte de "' + btn.dataset.nom + '" ?';
+            document.getElementById('modal-suppression').classList.remove('cachee');
+        }
+
+        document.getElementById('annuler-suppression').addEventListener('click', function () {
+            document.getElementById('modal-suppression').classList.add('cachee');
+        });
+
+        document.getElementById('confirmer-suppression').addEventListener('click', async function () {
+            try {
+                var reponse = await appelApi('/auth/utilisateurs/' + idUtilisateurCible, { method: 'DELETE' });
+                var data = await reponse.json();
+                if (!reponse.ok) throw new Error(data.erreur || 'Erreur');
+                afficherToast('Compte supprimé.');
+                document.getElementById('modal-suppression').classList.add('cachee');
+                chargerUtilisateurs();
+            } catch (err) {
+                afficherToast('Erreur : ' + err.message, 'erreur');
+            }
+        });
+
+        function ouvrirReset(btn) {
+            idUtilisateurCible = btn.dataset.id;
+            document.getElementById('nouveau-mdp').value = '';
+            document.getElementById('modal-reset').classList.remove('cachee');
+        }
+
+        document.getElementById('annuler-reset').addEventListener('click', function () {
+            document.getElementById('modal-reset').classList.add('cachee');
+        });
+
+        document.getElementById('form-reset').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            var nouveauMdp = document.getElementById('nouveau-mdp').value;
+            try {
+                var reponse = await appelApi('/auth/utilisateurs/' + idUtilisateurCible + '/reinitialiser-mdp', {
+                    method: 'PATCH',
+                    body: JSON.stringify({ nouveau_mot_de_passe: nouveauMdp })
+                });
+                var data = await reponse.json();
+                if (!reponse.ok) throw new Error(data.erreur || 'Erreur');
+                afficherToast('Mot de passe réinitialisé.');
+                document.getElementById('modal-reset').classList.add('cachee');
+            } catch (err) {
+                afficherToast('Erreur : ' + err.message, 'erreur');
+            }
+        });
+
+        chargerUtilisateurs();
+    </script>
+</body>
+</html>

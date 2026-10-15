@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil - SMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="page-accueil-flex">
+    <header id="app-header"></header>
+
+    <div class="layout-accueil">
+        <nav class="barre-laterale" id="menu-lateral"></nav>
+
+        <div class="contenu-accueil">
+            <div class="hero-accueil">
+                <div class="hero-layer actif" id="hero-layer-1"></div>
+                <div class="hero-layer" id="hero-layer-2"></div>
+                <div class="hero-overlay"></div>
+                <div class="hero-texte">
+    <h1 style="color: var(--orange-accent);">Bienvenue</h1>
+    <p>Que voulez-vous faire aujourd'hui ?</p>
+</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="common.js"></script>
+    <script>
+        executerSansBloquer(function () { protegerPage(); });
+        executerSansBloquer(function () { injecterHeader(); });
+        executerSansBloquer(function () { injecterMenuLateral('menu-lateral', true); });
+
+        // Fondu enchaine entre les photos, toutes les 3.5 secondes
+        executerSansBloquer(function () {
+            var photos = [
+                'https://images.unsplash.com/photo-1494412552100-42e4e7a74ec6?auto=format&fit=crop&w=1920&q=80',
+                'https://images.unsplash.com/photo-1758549683132-72ac09a3d5b5?auto=format&fit=crop&w=1920&q=80',
+                'https://images.unsplash.com/photo-1708193203896-ba0630862bb6?auto=format&fit=crop&w=1920&q=80',
+                'https://images.unsplash.com/photo-1508404999913-79a3a2e75437?auto=format&fit=crop&w=1920&q=80',
+                'https://images.unsplash.com/photo-1661756977826-c66970f2a2cb?auto=format&fit=crop&w=1920&q=80',
+                'https://images.unsplash.com/photo-1759611325490-1e05282fbedb?auto=format&fit=crop&w=1920&q=80',
+                'https://images.unsplash.com/photo-1703227373720-cff89520dd31?auto=format&fit=crop&w=1920&q=80',
+                'https://images.unsplash.com/photo-1716718810773-d2a52b43602f?auto=format&fit=crop&w=1920&q=80',
+                'https://images.unsplash.com/photo-1704716553676-4240c68ca57b?auto=format&fit=crop&w=1920&q=80',
+                'https://images.unsplash.com/photo-1695064940434-b81422491b64?auto=format&fit=crop&w=1920&q=80'
+            ];
+
+            var layer1 = document.getElementById('hero-layer-1');
+            var layer2 = document.getElementById('hero-layer-2');
+            var index = 0;
+            var premierEstActif = true;
+
+            layer1.style.backgroundImage = "url('" + photos[0] + "')";
+
+            setInterval(function () {
+                index = (index + 1) % photos.length;
+                var prochaineCouche = premierEstActif ? layer2 : layer1;
+                var ancienneCouche = premierEstActif ? layer1 : layer2;
+
+                prochaineCouche.style.backgroundImage = "url('" + photos[index] + "')";
+                prochaineCouche.classList.add('actif');
+                ancienneCouche.classList.remove('actif');
+
+                premierEstActif = !premierEstActif;
+            }, 3500);
+        });
+    </script>
+</body>
+</html>

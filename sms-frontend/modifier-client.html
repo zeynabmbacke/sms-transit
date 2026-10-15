@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier le client - SMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="app-header"></header>
+    <main>
+        <div class="zone-formulaire-pleine">
+            <h1 class="titre-page-transit">Modifier le client</h1>
+            <p class="sous-titre-page-transit">Corrige les coordonnées du client</p>
+
+            <form id="form-modif-client" class="grille-champs-cartes">
+                <div class="carte-champ">
+                    <label>Prénom</label>
+                    <input type="text" id="mc-prenom" required>
+                </div>
+                <div class="carte-champ">
+                    <label>Nom</label>
+                    <input type="text" id="mc-nom" required>
+                </div>
+                <div class="carte-champ">
+                    <label>Téléphone</label>
+                    <input type="tel" id="mc-telephone" required>
+                </div>
+                <div class="carte-champ">
+                    <label>Adresse</label>
+                    <input type="text" id="mc-adresse">
+                </div>
+                <button type="submit" class="carte-bouton-submit">Enregistrer les modifications</button>
+            </form>
+
+            <div id="zone-retour"></div>
+        </div>
+    </main>
+
+    <script src="common.js"></script>
+    <script>
+        var idClient = new URLSearchParams(window.location.search).get('id');
+
+        document.getElementById('form-modif-client').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            var corps = {
+                prenom: document.getElementById('mc-prenom').value,
+                nom: document.getElementById('mc-nom').value,
+                telephone: document.getElementById('mc-telephone').value,
+                adresse: document.getElementById('mc-adresse').value
+            };
+            try {
+                var reponse = await appelApi('/clients/' + idClient, {
+                    method: 'PUT',
+                    body: JSON.stringify(corps)
+                });
+                var data = await reponse.json().catch(function () { return {}; });
+                if (!reponse.ok) throw new Error(data.erreur || 'échec de la modification');
+                afficherToast('Client modifié avec succès !');
+                setTimeout(function () { window.location.href = 'client.html?id=' + idClient; }, 1200);
+            } catch (err) {
+                console.error(err);
+                afficherToast('Erreur : ' + err.message, 'erreur');
+            }
+        });
+
+        executerSansBloquer(function () { protegerPage(); });
+        executerSansBloquer(function () { injecterHeader(true); });
+        executerSansBloquer(function () { injecterMenuLateral('menu-lateral'); });
+        executerSansBloquer(function () { injecterBoutonRetour('zone-retour'); });
+
+        async function chargerClient() {
+            if (!idClient) {
+                afficherToast('Aucun client sélectionné.', 'erreur');
+                return;
+            }
+            try {
+                var reponse = await appelApi('/clients/' + idClient);
+                if (!reponse.ok) throw new Error('Client introuvable');
+                var c = await reponse.json();
+                document.getElementById('mc-prenom').value = c.prenom || '';
+                document.getElementById('mc-nom').value = c.nom || '';
+                document.getElementById('mc-telephone').value = c.telephone || '';
+                document.getElementById('mc-adresse').value = c.adresse || '';
+            } catch (err) {
+                console.error(err);
+                afficherToast('Erreur : ' + err.message, 'erreur');
+            }
+        }
+
+        chargerClient();
+    </script>
+</body>
+</html>

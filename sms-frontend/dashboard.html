@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SMS</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header id="app-header"></header>
+    <main>
+        <h1 class="titre-page-transit">Dashboard</h1><br>
+        <p class="sous-titre-page-transit">Vue d'ensemble de l'activité</p>
+
+        <div id="stats">
+            <div class="carte-stat">
+                <p class="label">Dossiers en cours</p>
+                <p class="valeur" id="stat-dossiers-cours">--</p>
+            </div>
+
+            <div class="carte-stat">
+                <p class="label">Clients actifs</p>
+                <p class="valeur" id="stat-clients">--</p>
+            </div>
+            <div class="carte-stat accent-orange">
+                <p class="label">Total à recouvrer</p>
+                <p class="valeur" id="stat-total-reste">--</p>
+            </div>
+            <a href="clients-impayes.html" class="carte-stat accent-orange carte-cliquable">
+                <p class="label">Clients avec impayés</p>
+                <p class="valeur" id="stat-clients-impayes">--</p>
+                <p class="voir-liste">Voir la liste</p>
+            </a>
+            <a href="dossiers-statut.html?statut=ouverture" class="carte-stat carte-cliquable">
+                <p class="label">Dossiers ouverts</p>
+                <p class="valeur" id="stat-ouverture">--</p>
+                <p class="voir-liste">Voir la liste</p>
+            </a>
+            <a href="dossiers-statut.html?statut=en_traitement" class="carte-stat carte-cliquable">
+                <p class="label">Dossiers en cours de traitement</p>
+                <p class="valeur" id="stat-traitement">--</p>
+                <p class="voir-liste">Voir la liste</p>
+            </a>
+            <a href="dossiers-statut.html?statut=pret" class="carte-stat carte-cliquable">
+                <p class="label">Dossiers Prêts</p>
+                <p class="valeur" id="stat-pret">--</p>
+                <p class="voir-liste">Voir la liste</p>
+            </a>
+
+            <a href="dossiers-statut.html?statut=livre" class="carte-stat accent-vert carte-cliquable">
+                <p class="label">Dossiers livrés</p>
+                <p class="valeur" id="stat-livres">--</p>
+                <p class="voir-liste">Voir la liste</p>
+            </a>
+        </div>
+
+        <section>
+            <h2>Derniers dossiers</h2>
+            <table>
+                <thead>
+                    <tr><th>Client</th><th>Conteneur</th><th>Statut</th><th>Reste à payer</th></tr>
+                </thead>
+                <tbody id="dossiers-corps"></tbody>
+            </table>
+        </section>
+
+        <div id="zone-retour"></div>
+    </main>
+
+    <script src="common.js"></script>
+    <script>
+        function esc(t) {
+            return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        executerSansBloquer(function () { protegerPage(); });
+        executerSansBloquer(function () { injecterHeader(true); });
+        executerSansBloquer(function () { injecterMenuLateral('menu-lateral'); });
+        executerSansBloquer(function () { injecterBoutonRetour('zone-retour'); });
+
+        async function chargerStats() {
+            try {
+                var reponse = await appelApi('/dossiers/stats');
+                var s = await reponse.json();
+                document.getElementById('stat-dossiers-cours').textContent = s.dossiers_en_cours;
+                document.getElementById('stat-livres').textContent = s.dossiers_total - s.dossiers_en_cours;
+                document.getElementById('stat-clients').textContent = s.clients_actifs;
+                document.getElementById('stat-total-reste').innerHTML = formatMontant(s.total_reste_a_payer);
+                document.getElementById('stat-clients-impayes').textContent = s.clients_avec_impayes;
+                document.getElementById('stat-ouverture').textContent = s.ouverture;
+                document.getElementById('stat-traitement').textContent = s.en_traitement;
+                document.getElementById('stat-pret').textContent = s.pret;
+            } catch (err) { console.error(err); }
+        }
+
+        async function chargerDerniersDossiers() {
+            try {
+                var reponse = await appelApi('/dossiers');
+                var dossiers = await reponse.json();
+                var corps = document.getElementById('dossiers-corps');
+                var html = '';
+                dossiers.slice(0, 8).forEach(function (d) {
+                    html += '<tr>' +
+                        '<td>' + esc(d.client_prenom + ' ' + d.client_nom) + '</td>' +
+                        '<td>' + esc(d.numero_conteneur || '-') + '</td>' +
+                        '<td><span class="badge badge-' + d.statut + '">' + LIBELLES_STATUT[d.statut] + '</span></td>' +
+                        '<td>' + formatMontant(d.reste_a_payer) + '</td>' +
+                        '</tr>';
+                });
+                corps.innerHTML = html;
+            } catch (err) { console.error(err); }
+        }
+
+        chargerStats();
+        chargerDerniersDossiers();
+    </script>
+</body>
+</html>
