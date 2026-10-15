@@ -315,7 +315,7 @@ main {
     border-left: 5px solid var(--bleu-clair);
 }
 .carte-stat.accent-orange { border-left-color: var(--orange-accent); }
-.carte-stat.accent-vert { border-left-color: #2e9e5b; }
+.carte-stat.accent-vert { border-left-color: #4a90c2; }
 .carte-stat .label {
     font-size: 0.8rem; color: var(--texte-secondaire); margin-bottom: 0.5rem;
     text-transform: uppercase; letter-spacing: 0.4px;
@@ -377,7 +377,7 @@ tr:last-child td { border-bottom: none; }
 .badge-ouverture { background: #fff3cd; color: #856404; }
 .badge-en_traitement { background: #ffe5d0; color: #a34700; }
 .badge-pret { background: #d1ecf1; color: #0c5460; }
-.badge-livre { background: #d4edda; color: #155724; }
+.badge-livre { background: #e3eef8; color: #0d2b45; }
 
 .select-statut {
     -webkit-appearance: none;
@@ -401,7 +401,7 @@ tr:last-child td { border-bottom: none; }
 .select-statut.badge-ouverture { background-color: #fff3cd; color: #856404; }
 .select-statut.badge-en_traitement { background-color: #ffe5d0; color: #a34700; }
 .select-statut.badge-pret { background-color: #d1ecf1; color: #0c5460; }
-.select-statut.badge-livre { background-color: #d4edda; color: #155724; }
+.select-statut.badge-livre { background-color: #e3eef8; color: #0d2b45; }
 
 .barre-recherche {
     width: 100%;
@@ -826,30 +826,95 @@ tr:last-child td { border-bottom: none; }
     }
 }
 
-/* ===== LOGO SMS COMPLET (cadre blanc, comme sur KTT) ===== */
+/* ==========================================================
+   THEME SMS : fond blanc, textes en bleu marine (celui de KTT),
+   touches d'orange sur certains textes. Aucun vert.
+   ========================================================== */
+:root {
+    --fond: #ffffff;
+    --bordure: #e3e7ed;
+    --ombre: 0 2px 14px rgba(13, 43, 69, 0.10);
+}
+
+body { background: #ffffff; color: var(--bleu-fonce); }
+
+/* En-tete : fond blanc, logo complet tel quel */
+#app-header {
+    background: #ffffff;
+    color: var(--bleu-fonce);
+    border-bottom: 2px solid var(--bleu-fonce);
+    box-shadow: 0 2px 12px rgba(13, 43, 69, 0.10);
+}
 .logo-zone img {
-    height: 92px;
+    height: 100px;
     width: auto;
-    background: white;
-    padding: 6px 12px;
-    border-radius: 10px;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
 }
+.nav-liens-header .lien-lateral { color: var(--bleu-fonce); }
+.nav-liens-header .lien-lateral:hover { color: var(--orange-accent); border-bottom-color: var(--orange-accent); background: transparent; }
+.utilisateur-connecte { color: var(--bleu-fonce); opacity: 1; font-weight: 600; }
+.header-actions button { background: var(--bleu-fonce); color: #ffffff; }
+.header-actions button:hover { background: var(--bleu-marine); }
 
-.cadre-logo-connexion {
-    background: white;
-    border-radius: 18px;
-    padding: 1.2rem 1.6rem;
-    width: 92%;
-    max-width: 640px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-}
-.zone-logo-connexion .cadre-logo-connexion img {
-    width: 100% !important;
-    max-width: 100% !important;
-    height: auto !important;
-    display: block !important;
-}
+/* Titres */
+.titre-page-transit { color: var(--bleu-fonce) !important; }
+.sous-titre-page-transit { color: var(--texte-secondaire) !important; }
+.entete-client-etale, .entete-client-etale h1 { color: var(--bleu-fonce); }
 
+/* Cartes sur fond blanc : fine bordure */
+section, .carte, .carte-stat, .carte-champ {
+    background: #ffffff;
+    border: 1px solid var(--bordure);
+}
+.carte-stat { border-left: 5px solid var(--bleu-clair); }
+.carte-stat.accent-orange { border-left-color: var(--bleu-fonce); }
+.carte-stat.accent-vert { border-left-color: var(--bleu-clair); }
+.carte-stat .valeur { color: var(--bleu-fonce); }
+.carte-stat.accent-orange .valeur { color: var(--orange-accent); }
+.voir-liste { color: var(--orange-accent); }
+
+.coord-item { background: #f4f6f9; border: 1px solid var(--bordure); }
+.coord-item .label { color: var(--texte-secondaire); opacity: 1; }
+.coord-item .valeur { color: var(--bleu-fonce); }
+.coord-item.accent-orange .valeur { color: var(--orange-accent); }
+
+.prix { color: var(--orange-accent); }
+.btn-paiement { background: var(--bleu-fonce); }
+.bouton-retour-accueil { background: var(--bleu-fonce); box-shadow: 0 6px 18px rgba(13, 43, 69, 0.30); }
+#toast { background: var(--bleu-fonce); box-shadow: 0 8px 28px rgba(13, 43, 69, 0.35); }
+#toast.toast-erreur { background: #b23a3a; }
+.btn-voir { background: var(--bleu-fonce); }
+.btn-voir:hover { background: var(--bleu-marine); }
+.barre-recherche { border: 1px solid var(--bordure); background-color: #ffffff; }
+.bouton-secondaire { background: #ffffff; border: 1px solid var(--bordure); }
+
+/* Statuts : bleus et oranges, jamais de vert */
+.badge-pret, .select-statut.badge-pret { background-color: #e3eef8; background: #e3eef8; color: #0d2b45; }
+.badge-livre, .select-statut.badge-livre { background-color: #eef0f3; background: #eef0f3; color: #0d2b45; }
+
+/* Barre laterale de l'accueil */
+.barre-laterale { background: #ffffff; border-right: 1px solid var(--bordure); }
+.lien-lateral { color: var(--bleu-fonce); }
+.lien-lateral:hover { background: #f4f6f9; color: var(--orange-accent); border-left-color: var(--orange-accent); }
+.lien-lateral-actif { background: #f4f6f9; color: var(--bleu-fonce); border-left-color: var(--bleu-fonce); }
+.separateur-lateral { background: var(--bordure); }
+.contenu-accueil { background: #ffffff; }
+.hero-accueil { margin: 1rem; }
+@media (max-width: 900px) { .lien-lateral:hover { background: #f4f6f9; } }
+
+/* Connexion : fond blanc, logo complet tel quel */
+.zone-logo-connexion { background: #ffffff; border-right: 1px solid var(--bordure); padding: 2rem; }
+.cadre-logo-connexion { background: none; box-shadow: none; padding: 0; width: 92%; max-width: 640px; }
+.zone-logo-connexion .cadre-logo-connexion img { width: 100% !important; max-width: 100% !important; height: auto !important; display: block !important; }
+.zone-formulaire-connexion { background: #ffffff; }
+.carte-connexion { border: 1px solid var(--bordure); }
+.carte-connexion button { background: var(--bleu-fonce); }
+
+@media (max-width: 800px) {
+    .zone-logo-connexion { border-right: none; border-bottom: 1px solid var(--bordure); padding: 1rem; }
+}
 @media (max-width: 640px) {
-    .logo-zone img { height: 60px; padding: 4px 8px; }
+    .logo-zone img { height: 62px; }
 }

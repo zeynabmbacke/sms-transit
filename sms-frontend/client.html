@@ -10,7 +10,7 @@
     <header id="app-header"></header>
     <main>
         <div class="entete-client-etale" id="entete-client">
-            <p style="color:white;">Chargement...</p>
+            <p style="color:var(--bleu-fonce);">Chargement...</p>
         </div>
 
         <div class="barre-actions">
@@ -59,7 +59,7 @@
 
         async function chargerFicheClient() {
             if (!idClient) {
-                document.getElementById('entete-client').innerHTML = '<p style="color:white;">Aucun client sélectionné.</p>';
+                document.getElementById('entete-client').innerHTML = '<p style="color:var(--bleu-fonce);">Aucun client sélectionné.</p>';
                 return;
             }
 
@@ -124,7 +124,7 @@
                 }
             } catch (err) {
                 console.error('Erreur fiche client:', err);
-                document.getElementById('entete-client').innerHTML = '<p style="color:white;">Erreur : ' + esc(err.message) + '</p>';
+                document.getElementById('entete-client').innerHTML = '<p style="color:var(--bleu-fonce);">Erreur : ' + esc(err.message) + '</p>';
             }
         }
 
