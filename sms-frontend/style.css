@@ -955,5 +955,3 @@ td, tbody td { color: #14245e !important; }
 .layout-accueil, .contenu-accueil { background: transparent !important; }
 .carte-stat .label, .carte-stat .valeur { color: #14245e; }
 .carte-stat .label { color: #667085; }
-.logo-zone img, .cadre-logo-connexion img { background: none !important; padding: 0 !important; border-radius: 0 !important; }
-.logo-zone img { height: 70px; }
