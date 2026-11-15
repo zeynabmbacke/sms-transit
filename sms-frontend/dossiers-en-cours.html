@@ -76,7 +76,7 @@
                 });
                 html += '<tr>' +
                     '<td>' + esc(d.client_prenom + ' ' + d.client_nom) + '</td>' +
-                    '<td>' + esc(d.numero_conteneur || '-') + '</td>' +
+                    '<td>' + esc(libelleConteneurs(d)) + '</td>' +
                     '<td><select class="badge-select badge-' + d.statut + ' select-statut" data-id="' + d.id + '">' + options + '</select></td>' +
                     '<td>' + formatMontant(d.reste_a_payer) + '</td>' +
                     '<td><div class="groupe-actions">' +

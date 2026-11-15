@@ -86,7 +86,7 @@
                 html += '<tr>' +
                     '<td>' + esc(d.reference) + '</td>' +
                     '<td>' + esc(d.client_prenom + ' ' + d.client_nom) + '</td>' +
-                    '<td>' + esc(d.numero_conteneur || '-') + '</td>' +
+                    '<td>' + esc(libelleConteneurs(d)) + '</td>' +
                     '<td>' + esc(d.nature_marchandise || '-') + '</td>' +
                     '<td>' + esc(d.compagnie_maritime || '-') + '</td>' +
                     '<td>' + formatDateCourte(d.date_arrivee_prevue) + '</td>' +

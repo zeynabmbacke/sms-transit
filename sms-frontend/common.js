@@ -194,3 +194,11 @@ window.addEventListener('unhandledrejection', function (e) {
     var msg = (e.reason && e.reason.message) ? e.reason.message : String(e.reason);
     afficherToast('Erreur technique : ' + msg, 'erreur');
 });
+
+// Texte d'affichage des conteneurs d'un dossier : "3 conteneurs : MSKU1, TGHU2"
+function libelleConteneurs(d) {
+    var nb = parseInt(d.nombre_conteneurs, 10) || 1;
+    var numeros = d.numero_conteneur || '';
+    if (nb > 1) return nb + ' conteneurs' + (numeros ? ' : ' + numeros : '');
+    return numeros || '-';
+}

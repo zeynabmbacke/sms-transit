@@ -112,7 +112,7 @@
 
                         html += '<tr>' +
                             '<td>' + esc(d.reference) + '</td>' +
-                            '<td>' + esc(d.numero_conteneur || '-') + '</td>' +
+                            '<td>' + esc(libelleConteneurs(d)) + '</td>' +
                             '<td><span class="badge badge-' + d.statut + '">' + LIBELLES_STATUT[d.statut] + '</span></td>' +
                             '<td>' + formatMontant(d.montant_total_du) + '</td>' +
                             '<td>' + formatMontant(d.montant_verse) + '</td>' +

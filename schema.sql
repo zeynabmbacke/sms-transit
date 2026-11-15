@@ -19,6 +19,7 @@ CREATE TABLE `dossiers` (
   `client_id` int(11) NOT NULL,
   `type_operation` enum('transit') NOT NULL DEFAULT 'transit',
   `numero_conteneur` text DEFAULT NULL,
+  `nombre_conteneurs` int(11) NOT NULL DEFAULT 1,
   `type_conteneur` enum('20_pieds','40_pieds','frigorifique') DEFAULT NULL,
   `numero_bl` varchar(100) DEFAULT NULL,
   `compagnie_maritime` varchar(100) DEFAULT NULL,

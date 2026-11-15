@@ -30,8 +30,12 @@
                     <label>Numéro BL</label>
                     <input type="text" id="dossier-bl" placeholder="ex: MAEU123456789">
                 </div>
+                <div class="carte-champ">
+                    <label>Nombre de conteneurs</label>
+                    <input type="number" id="dossier-nombre-conteneurs" min="1" value="1">
+                </div>
                 <div class="carte-champ pleine-largeur">
-                    <label>Conteneurs de ce dossier</label>
+                    <label>Numéros des conteneurs (facultatif)</label>
                     <div id="liste-conteneurs"></div>
                     <button type="button" id="btn-ajouter-conteneur" class="bouton-secondaire" style="margin-top:0.8rem;">+ Ajouter un conteneur</button>
                 </div>
@@ -135,6 +139,7 @@
                 reference: document.getElementById('dossier-reference').value,
                 numero_conteneur: lireConteneurs(),
                 numero_bl: document.getElementById('dossier-bl').value.trim(),
+                nombre_conteneurs: document.getElementById('dossier-nombre-conteneurs').value || 1,
                 nature_marchandise: document.getElementById('dossier-nature').value,
                 volume: document.getElementById('dossier-volume').value,
                 compagnie_maritime: document.getElementById('dossier-compagnie').value,
@@ -151,6 +156,7 @@
                 if (!reponse.ok) throw new Error(data.erreur || 'echec creation');
                 afficherToast('Dossier créé avec succès !');
                 document.getElementById('form-dossier').reset();
+                document.getElementById('dossier-nombre-conteneurs').value = 1;
                 document.getElementById('liste-conteneurs').innerHTML = '';
                 ajouterLigneConteneur();
                 document.getElementById('dossier-client-id').value = '';
