@@ -37,7 +37,6 @@
                 <div class="carte-champ pleine-largeur">
                     <label>Numéros des conteneurs (facultatif)</label>
                     <div id="liste-conteneurs"></div>
-                    <button type="button" id="btn-ajouter-conteneur" class="bouton-secondaire" style="margin-top:0.8rem;">+ Ajouter un conteneur</button>
                 </div>
                 <div class="carte-champ">
                     <label>Nature</label>
@@ -82,15 +81,28 @@
             return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
-        // Plusieurs conteneurs pour un meme dossier : une ligne par conteneur
-        function ajouterLigneConteneur() {
-            var ligne = document.createElement('div');
-            ligne.className = 'ligne-conteneur';
-            ligne.style.cssText = 'display:flex; gap:0.5rem; margin-bottom:0.5rem;';
-            ligne.innerHTML = '<input type="text" class="input-conteneur" placeholder="Numéro de conteneur" style="flex:1;">' +
-                '<button type="button" class="btn-retirer-conteneur bouton-secondaire" title="Retirer ce conteneur">✕</button>';
-            document.getElementById('liste-conteneurs').appendChild(ligne);
-            return ligne.querySelector('input');
+        // Le nombre de conteneurs commande le nombre de champs : un champ par conteneur
+        var MAX_CONTENEURS = 200;
+
+        function synchroniserLignesConteneurs() {
+            var champNombre = document.getElementById('dossier-nombre-conteneurs');
+            var nb = parseInt(champNombre.value, 10);
+            if (!(nb >= 1)) nb = 1;
+            if (nb > MAX_CONTENEURS) nb = MAX_CONTENEURS;
+            var zone = document.getElementById('liste-conteneurs');
+            while (zone.children.length < nb) {
+                var champ = document.createElement('input');
+                champ.type = 'text';
+                champ.className = 'input-conteneur';
+                champ.style.marginBottom = '0.5rem';
+                zone.appendChild(champ);
+            }
+            while (zone.children.length > nb) {
+                zone.removeChild(zone.lastChild);
+            }
+            Array.prototype.forEach.call(zone.children, function (champ, i) {
+                champ.placeholder = 'Numéro du conteneur ' + (i + 1);
+            });
         }
 
         function lireConteneurs() {
@@ -102,30 +114,18 @@
             return valeurs.join(', ');
         }
 
-        document.getElementById('btn-ajouter-conteneur').addEventListener('click', function () {
-            ajouterLigneConteneur().focus();
-        });
+        document.getElementById('dossier-nombre-conteneurs').addEventListener('input', synchroniserLignesConteneurs);
 
-        document.getElementById('liste-conteneurs').addEventListener('click', function (e) {
-            var bouton = e.target.closest('.btn-retirer-conteneur');
-            if (!bouton) return;
-            var lignes = document.querySelectorAll('#liste-conteneurs .ligne-conteneur');
-            if (lignes.length <= 1) {
-                lignes[0].querySelector('input').value = '';
-                return;
-            }
-            bouton.closest('.ligne-conteneur').remove();
-        });
-
-        // Entree dans un champ conteneur : ajoute une ligne au lieu d'envoyer le formulaire
+        // Entree dans un champ conteneur : passe au suivant au lieu d'envoyer le formulaire
         document.getElementById('liste-conteneurs').addEventListener('keydown', function (e) {
             if (e.key === 'Enter' && e.target.classList.contains('input-conteneur')) {
                 e.preventDefault();
-                ajouterLigneConteneur().focus();
+                var suivant = e.target.nextElementSibling;
+                if (suivant) suivant.focus();
             }
         });
 
-        ajouterLigneConteneur();
+        synchroniserLignesConteneurs();
 
         document.getElementById('form-dossier').addEventListener('submit', async function (e) {
             e.preventDefault();
@@ -158,7 +158,7 @@
                 document.getElementById('form-dossier').reset();
                 document.getElementById('dossier-nombre-conteneurs').value = 1;
                 document.getElementById('liste-conteneurs').innerHTML = '';
-                ajouterLigneConteneur();
+                synchroniserLignesConteneurs();
                 document.getElementById('dossier-client-id').value = '';
                 document.getElementById('client-selectionne').textContent = '';
             } catch (err) {
