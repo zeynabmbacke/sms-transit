@@ -83,7 +83,7 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
     const {
-        reference, client_id, numero_conteneur, nature_marchandise, volume,
+        reference, client_id, numero_conteneur, numero_bl, nature_marchandise, volume,
         compagnie_maritime, numero_declaration, date_arrivee_prevue, montant_total_du
     } = req.body;
 
@@ -94,10 +94,10 @@ router.post('/', async (req, res) => {
     try {
         const [result] = await db.query(
             `INSERT INTO dossiers
-            (reference, client_id, type_operation, numero_conteneur, nature_marchandise, volume,
+            (reference, client_id, type_operation, numero_conteneur, numero_bl, nature_marchandise, volume,
              compagnie_maritime, numero_declaration, date_arrivee_prevue, statut, montant_total_du)
-            VALUES (?, ?, 'transit', ?, ?, ?, ?, ?, ?, 'ouverture', ?)`,
-            [reference, client_id, vide(numero_conteneur), vide(nature_marchandise), vide(volume),
+            VALUES (?, ?, 'transit', ?, ?, ?, ?, ?, ?, ?, 'ouverture', ?)`,
+            [reference, client_id, vide(numero_conteneur), vide(numero_bl), vide(nature_marchandise), vide(volume),
              vide(compagnie_maritime), vide(numero_declaration), vide(date_arrivee_prevue),
              Number(montant_total_du) || 0]
         );
@@ -113,7 +113,7 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
     const {
-        reference, numero_conteneur, nature_marchandise, volume,
+        reference, numero_conteneur, numero_bl, nature_marchandise, volume,
         compagnie_maritime, numero_declaration, date_arrivee_prevue, montant_total_du
     } = req.body;
 
@@ -129,11 +129,11 @@ router.put('/:id', async (req, res) => {
     try {
         const [result] = await db.query(
             `UPDATE dossiers SET
-                reference = ?, numero_conteneur = ?, nature_marchandise = ?, volume = ?,
+                reference = ?, numero_conteneur = ?, numero_bl = ?, nature_marchandise = ?, volume = ?,
                 compagnie_maritime = ?, numero_declaration = ?, date_arrivee_prevue = ?,
                 montant_total_du = ?
              WHERE id = ?`,
-            [reference, vide(numero_conteneur), vide(nature_marchandise), vide(volume),
+            [reference, vide(numero_conteneur), vide(numero_bl), vide(nature_marchandise), vide(volume),
              vide(compagnie_maritime), vide(numero_declaration), vide(date_arrivee_prevue),
              montant, req.params.id]
         );

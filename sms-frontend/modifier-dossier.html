@@ -22,8 +22,12 @@
                 <input type="text" id="mod-reference" required>
             </div>
             <div class="carte-champ">
-                <label>Numéro de conteneur</label>
-                <input type="text" id="mod-conteneur">
+                <label>Numéro BL</label>
+                <input type="text" id="mod-bl">
+            </div>
+            <div class="carte-champ">
+                <label>Numéro(s) de conteneur</label>
+                <input type="text" id="mod-conteneur" placeholder="Sépare plusieurs conteneurs par une virgule">
             </div>
             <div class="carte-champ">
                 <label>Nature</label>
@@ -108,6 +112,7 @@
             var corps = {
                 reference: document.getElementById('mod-reference').value,
                 numero_conteneur: document.getElementById('mod-conteneur').value,
+                numero_bl: document.getElementById('mod-bl').value.trim(),
                 nature_marchandise: document.getElementById('mod-nature').value,
                 volume: document.getElementById('mod-volume').value,
                 compagnie_maritime: document.getElementById('mod-compagnie').value,
@@ -165,6 +170,7 @@
                 document.getElementById('mod-client').value = d.client_prenom + ' ' + d.client_nom;
                 document.getElementById('mod-reference').value = d.reference || '';
                 document.getElementById('mod-conteneur').value = d.numero_conteneur || '';
+                document.getElementById('mod-bl').value = d.numero_bl || '';
                 document.getElementById('mod-nature').value = d.nature_marchandise || '';
                 choisirVolume(d.volume);
                 document.getElementById('mod-compagnie').value = d.compagnie_maritime || '';

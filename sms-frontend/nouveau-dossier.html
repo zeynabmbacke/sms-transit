@@ -27,8 +27,13 @@
                     <input type="text" id="dossier-reference" placeholder="ex: SMS-2026-002" required>
                 </div>
                 <div class="carte-champ">
-                    <label>Numéro de conteneur</label>
-                    <input type="text" id="dossier-conteneur">
+                    <label>Numéro BL</label>
+                    <input type="text" id="dossier-bl" placeholder="ex: MAEU123456789">
+                </div>
+                <div class="carte-champ pleine-largeur">
+                    <label>Conteneurs de ce dossier</label>
+                    <div id="liste-conteneurs"></div>
+                    <button type="button" id="btn-ajouter-conteneur" class="bouton-secondaire" style="margin-top:0.8rem;">+ Ajouter un conteneur</button>
                 </div>
                 <div class="carte-champ">
                     <label>Nature</label>
@@ -73,6 +78,51 @@
             return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         }
 
+        // Plusieurs conteneurs pour un meme dossier : une ligne par conteneur
+        function ajouterLigneConteneur() {
+            var ligne = document.createElement('div');
+            ligne.className = 'ligne-conteneur';
+            ligne.style.cssText = 'display:flex; gap:0.5rem; margin-bottom:0.5rem;';
+            ligne.innerHTML = '<input type="text" class="input-conteneur" placeholder="Numéro de conteneur" style="flex:1;">' +
+                '<button type="button" class="btn-retirer-conteneur bouton-secondaire" title="Retirer ce conteneur">✕</button>';
+            document.getElementById('liste-conteneurs').appendChild(ligne);
+            return ligne.querySelector('input');
+        }
+
+        function lireConteneurs() {
+            var valeurs = [];
+            document.querySelectorAll('#liste-conteneurs .input-conteneur').forEach(function (champ) {
+                var v = champ.value.trim();
+                if (v) valeurs.push(v);
+            });
+            return valeurs.join(', ');
+        }
+
+        document.getElementById('btn-ajouter-conteneur').addEventListener('click', function () {
+            ajouterLigneConteneur().focus();
+        });
+
+        document.getElementById('liste-conteneurs').addEventListener('click', function (e) {
+            var bouton = e.target.closest('.btn-retirer-conteneur');
+            if (!bouton) return;
+            var lignes = document.querySelectorAll('#liste-conteneurs .ligne-conteneur');
+            if (lignes.length <= 1) {
+                lignes[0].querySelector('input').value = '';
+                return;
+            }
+            bouton.closest('.ligne-conteneur').remove();
+        });
+
+        // Entree dans un champ conteneur : ajoute une ligne au lieu d'envoyer le formulaire
+        document.getElementById('liste-conteneurs').addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && e.target.classList.contains('input-conteneur')) {
+                e.preventDefault();
+                ajouterLigneConteneur().focus();
+            }
+        });
+
+        ajouterLigneConteneur();
+
         document.getElementById('form-dossier').addEventListener('submit', async function (e) {
             e.preventDefault();
             var clientId = document.getElementById('dossier-client-id').value;
@@ -83,7 +133,8 @@
             var nouveauDossier = {
                 client_id: clientId,
                 reference: document.getElementById('dossier-reference').value,
-                numero_conteneur: document.getElementById('dossier-conteneur').value,
+                numero_conteneur: lireConteneurs(),
+                numero_bl: document.getElementById('dossier-bl').value.trim(),
                 nature_marchandise: document.getElementById('dossier-nature').value,
                 volume: document.getElementById('dossier-volume').value,
                 compagnie_maritime: document.getElementById('dossier-compagnie').value,
@@ -100,6 +151,8 @@
                 if (!reponse.ok) throw new Error(data.erreur || 'echec creation');
                 afficherToast('Dossier créé avec succès !');
                 document.getElementById('form-dossier').reset();
+                document.getElementById('liste-conteneurs').innerHTML = '';
+                ajouterLigneConteneur();
                 document.getElementById('dossier-client-id').value = '';
                 document.getElementById('client-selectionne').textContent = '';
             } catch (err) {
