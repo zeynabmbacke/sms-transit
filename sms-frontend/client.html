@@ -15,6 +15,7 @@
 
         <div class="barre-actions">
             <a href="#" id="btn-modifier-client" class="bouton-secondaire">Modifier le client</a>
+            <button type="button" id="btn-supprimer-client" class="bouton-secondaire" style="display:none; background:#b23a3a; color:white; border-color:#b23a3a;">Supprimer le client</button>
         </div>
 
         <section>
@@ -42,6 +43,17 @@
         </div>
     </div>
 
+    <div id="modal-suppression-client" class="modal cachee">
+        <div class="modal-contenu">
+            <h3>Supprimer ce client</h3>
+            <p style="color: var(--texte-secondaire); margin-bottom: 1rem;" id="texte-suppression-client"></p>
+            <div class="modal-actions">
+                <button id="non-suppression-client" style="background:#eef0f3;">NON</button>
+                <button id="oui-suppression-client" style="background:#b23a3a; color:white;">OUI, SUPPRIMER</button>
+            </div>
+        </div>
+    </div>
+
     <script src="common.js"></script>
     <script>
         function esc(t) {
@@ -56,6 +68,11 @@
         var idClient = new URLSearchParams(window.location.search).get('id');
         var idDossierCible = null;
         var idFactureCible = null;
+        var clientCourant = null;
+
+        // Le bouton Supprimer n'existe que pour le compte administrateur
+        var utilisateurCourant = getUtilisateur();
+        var estAdmin = !!(utilisateurCourant && utilisateurCourant.role === 'admin');
 
         async function chargerFicheClient() {
             if (!idClient) {
@@ -69,6 +86,8 @@
                 var reponse = await appelApi('/clients/' + idClient);
                 if (!reponse.ok) throw new Error('HTTP ' + reponse.status);
                 var client = await reponse.json();
+                clientCourant = client;
+                if (estAdmin) document.getElementById('btn-supprimer-client').style.display = '';
 
                 // Factures du client, rangées par dossier
                 var facturesParDossier = {};
@@ -220,6 +239,33 @@
             } catch (err) {
                 afficherToast('Erreur : ' + err.message, 'erreur');
                 document.getElementById('modal-retrait').classList.add('cachee');
+            }
+        });
+
+        document.getElementById('btn-supprimer-client').addEventListener('click', function () {
+            if (!estAdmin || !clientCourant) return;
+            var nb = clientCourant.dossiers.length;
+            document.getElementById('texte-suppression-client').textContent =
+                'Supprimer ' + clientCourant.prenom + ' ' + clientCourant.nom + ' ? ' +
+                (nb > 0 ? 'Ses ' + nb + ' dossier(s), leurs versements et leurs factures seront aussi supprimés. ' : '') +
+                'Cette action est définitive.';
+            document.getElementById('modal-suppression-client').classList.remove('cachee');
+        });
+
+        document.getElementById('non-suppression-client').addEventListener('click', function () {
+            document.getElementById('modal-suppression-client').classList.add('cachee');
+        });
+
+        document.getElementById('oui-suppression-client').addEventListener('click', async function () {
+            try {
+                var reponse = await appelApi('/clients/' + idClient, { method: 'DELETE' });
+                var data = await reponse.json().catch(function () { return {}; });
+                if (!reponse.ok) throw new Error(data.erreur || 'échec');
+                afficherToast('Client supprimé.');
+                setTimeout(function () { window.location.href = 'clients.html'; }, 800);
+            } catch (err) {
+                afficherToast('Erreur : ' + err.message, 'erreur');
+                document.getElementById('modal-suppression-client').classList.add('cachee');
             }
         });
 

@@ -110,4 +110,22 @@ router.put('/:id', async (req, res) => {
     }
 });
 
+router.delete('/:id', async (req, res) => {
+    // Seul l'administrateur (le directeur) peut supprimer un client.
+    if (!req.utilisateur || req.utilisateur.role !== 'admin') {
+        return res.status(403).json({ erreur: 'Seul l\'administrateur peut supprimer un client' });
+    }
+    try {
+        // Les dossiers, versements et factures du client sont supprimes avec lui (ON DELETE CASCADE).
+        const [result] = await db.query('DELETE FROM clients WHERE id = ?', [req.params.id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ erreur: 'Client introuvable' });
+        }
+        res.json({ succes: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ erreur: 'Erreur lors de la suppression du client' });
+    }
+});
+
 module.exports = router;
